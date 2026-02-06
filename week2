@@ -1,0 +1,76 @@
+Python 3.12.6 (tags/v3.12.6:a4a2d2b, Sep  6 2024, 20:11:23) [MSC v.1940 64 bit (AMD64)] on win32
+Type "help", "copyright", "credits" or "license()" for more information.
+>>> import heapq
+... 
+... # Jug capacities
+... JUG_A = 4
+... JUG_B = 3
+... GOAL = 2
+... 
+... # Heuristic function (AI knowledge)
+... def heuristic(state):
+...     x, y = state
+...     return min(abs(x - GOAL), abs(y - GOAL))
+... 
+... # Generate all possible next states
+... def get_neighbors(state):
+...     x, y = state
+...     neighbors = []
+... 
+...     # Fill Jug A
+...     neighbors.append((JUG_A, y))
+... 
+...     # Fill Jug B
+...     neighbors.append((x, JUG_B))
+... 
+...     # Empty Jug A
+...     neighbors.append((0, y))
+... 
+...     # Empty Jug B
+...     neighbors.append((x, 0))
+... 
+...     # Pour A -> B
+...     transfer = min(x, JUG_B - y)
+...     neighbors.append((x - transfer, y + transfer))
+... 
+...     # Pour B -> A
+...     transfer = min(y, JUG_A - x)
+...     neighbors.append((x + transfer, y - transfer))
+... 
+...     return neighbors
+... 
+... # A* Algorithm
+... def a_star():
+...     start = (0, 0)
+...     priority_queue = []
+...     heapq.heappush(priority_queue, (heuristic(start), 0, start, []))
+... 
+...     visited = set()
+... 
+...     while priority_queue:
+        f, g, current, path = heapq.heappop(priority_queue)
+
+        if current in visited:
+            continue
+
+        visited.add(current)
+        path = path + [current]
+
+        x, y = current
+        if x == GOAL or y == GOAL:
+            return path
+
+        for neighbor in get_neighbors(current):
+            if neighbor not in visited:
+                new_g = g + 1
+                new_f = new_g + heuristic(neighbor)
+                heapq.heappush(priority_queue, (new_f, new_g, neighbor, path))
+
+    return None
+
+# Run the algorithm
+solution = a_star()
+
+print("Solution path:")
+for step in solution:
+    print(step)
