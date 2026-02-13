@@ -1,79 +1,115 @@
 from collections import deque
 
-# Goal state
-goal_state = [[1, 2, 3],
-              [4, 5, 6],
-              [7, 8, 0]]
+# Jug capacities
+JUG_A = 8
+JUG_B = 5
+JUG_C = 3
+GOAL = 4
 
-# Find blank tile position
-def find_blank(state):
-    for i in range(3):
-        for j in range(3):
-            if state[i][j] == 0:
-                return i, j
-
-# Generate possible moves
-def generate_neighbors(state):
+# Generate all possible next states
+def get_neighbors(state):
+    a, b, c = state
     neighbors = []
-    x, y = find_blank(state)
-    moves = [(1,0), (-1,0), (0,1), (0,-1)]
 
-    for dx, dy in moves:
-        nx, ny = x + dx, y + dy
-        if 0 <= nx < 3 and 0 <= ny < 3:
-            new_state = [row[:] for row in state]
-            new_state[x][y], new_state[nx][ny] = new_state[nx][ny], new_state[x][y]
-            neighbors.append(new_state)
+    # Fill jugs
+    neighbors.append((JUG_A, b, c))
+    neighbors.append((a, JUG_B, c))
+    neighbors.append((a, b, JUG_C))
+
+    # Empty jugs
+    neighbors.append((0, b, c))
+    neighbors.append((a, 0, c))
+    neighbors.append((a, b, 0))
+
+    # Pour operations
+    def pour(x, y, cap_y):
+        t = min(x, cap_y - y)
+        return x - t, y + t
+
+    # A -> B, A -> C
+    na, nb = pour(a, b, JUG_B)
+    neighbors.append((na, nb, c))
+    na, nc = pour(a, c, JUG_C)
+    neighbors.append((na, b, nc))
+
+    # B -> A, B -> C
+    nb, na = pour(b, a, JUG_A)
+    neighbors.append((na, nb, c))
+    nb, nc = pour(b, c, JUG_C)
+    neighbors.append((a, nb, nc))
+
+    # C -> A, C -> B
+    nc, na = pour(c, a, JUG_A)
+    neighbors.append((na, b, nc))
+    nc, nb = pour(c, b, JUG_B)
+    neighbors.append((a, nb, nc))
 
     return neighbors
-def bfs(start_state):
-    queue = deque()
+
+
+# Goal test
+def is_goal(state):
+    return GOAL in state
+
+
+# ---------------- BFS ----------------
+def bfs():
+    start = (0, 0, 0)
+    queue = deque([(start, [])])
     visited = set()
 
-    queue.append((start_state, []))
-    visited.add(str(start_state))
-
     while queue:
-        state, path = queue.popleft()
+        current, path = queue.popleft()
 
-        if state == goal_state:
-            return path + [state]
+        if current in visited:
+            continue
 
-        for neighbor in generate_neighbors(state):
-            if str(neighbor) not in visited:
-                visited.add(str(neighbor))
-                queue.append((neighbor, path + [state]))
+        visited.add(current)
+        path = path + [current]
+
+        if is_goal(current):
+            return path
+
+        for neighbor in get_neighbors(current):
+            if neighbor not in visited:
+                queue.append((neighbor, path))
+
     return None
-def dfs(state, visited, path, depth, max_depth):
-    if state == goal_state:
-        return path + [state]
 
-    if depth >= max_depth:
-        return None
 
-    visited.add(str(state))
+# ---------------- DFS ----------------
+def dfs():
+    start = (0, 0, 0)
+    stack = [(start, [])]
+    visited = set()
 
-    for neighbor in generate_neighbors(state):
-        if str(neighbor) not in visited:
-            result = dfs(neighbor, visited, path + [state], depth + 1, max_depth)
-            if result:
-                return result
+    while stack:
+        current, path = stack.pop()
+
+        if current in visited:
+            continue
+
+        visited.add(current)
+        path = path + [current]
+
+        if is_goal(current):
+            return path
+
+        for neighbor in get_neighbors(current):
+            if neighbor not in visited:
+                stack.append((neighbor, path))
+
     return None
-start_state = [[1, 2, 3],
-               [4, 0, 6],
-               [7, 5, 8]]
 
-print("BFS Solution:")
-bfs_solution = bfs(start_state)
+
+# Run both algorithms
+bfs_solution = bfs()
+dfs_solution = dfs()
+
+print("BFS Solution Path:")
 for step in bfs_solution:
-    for row in step:
-        print(row)
-    print()
+    print(step)
 
-print("DFS Solution:")
-dfs_solution = dfs(start_state, set(), [], 0, 20)
+print("\nDFS Solution Path:")
 for step in dfs_solution:
-    for row in step:
-        print(row)
-    print()
-
+    print(step)
